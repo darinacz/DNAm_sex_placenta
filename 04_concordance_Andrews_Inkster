@@ -1,0 +1,84 @@
+library(VennDiagram)
+
+#association results from Andrews et al.
+#https://www.nature.com/articles/s41598-022-13544-z
+#532 placentae, 450K
+#looks at changes in males with regards to females
+andrews<-read.table("results_Andrews.csv",sep=",",header=T)
+length(which(andrews$P.Value< 9e-08)) #n=6,592 epigenome-wide significant hits
+
+#association results from Inkster et al.
+#https://bsd.biomedcentral.com/articles/10.1186/s13293-021-00381-4#MOESM3
+#looks at changes in males with regards to females
+#342 placentae, 450K
+inkster<-read.table("results_Inkster.txt",sep="\t",header=T,na=c(""," "))
+length(which(inkster$DMP_P_Value< 9e-08)) #n=3,156 epigenome-wide significant hits
+
+#our data
+#762 placentae, EPIC
+#changes in females with regards to males
+#read in meta-analysis results
+we<-read.table("meta_BET_PREDO_ITU_random1.tbl",sep="\t",header=T)
+we$FDR<-p.adjust(we$PvalueARE,method="BH")
+length(which(we$PvalueARE<9e-08)) #n=10,737 epigenome-wide significant hits
+
+#450K and EPIC: overlap of 290,439 across all three studies
+index<-which((we$MarkerName %in% inkster$probeID) & (we$MarkerName %in% andrews$ID)) #n=290,439
+we_sub<-we[index,]
+index<-which((inkster$probeID %in% we_sub$MarkerName) & (inkster$probeID %in% andrews$ID)) #n=290,439
+inkster_sub<-inkster[index,]
+index<-which((andrews$ID %in% we_sub$MarkerName) & (andrews$ID %in% inkster_sub$probeID)) #n=290,439
+andrews_sub<-andrews[index,]
+all<-merge(we_sub,inkster_sub,by=1)
+all<-merge(all,andrews_sub,by=1)
+
+#CAUTION: our study is coded in a different direction!
+length(which(all$EffectARE <0 & all$DMP_delta_Beta > 0 & all$logFC >0 )) #n=74,270
+length(which(all$EffectARE >0 & all$DMP_delta_Beta < 0 & all$logFC <0 )) #n=64,234
+#138,504 in same direction over all studies, regardless of p-value
+
+index<-which(all$PvalueARE< 9e-8 & all$DMP_P_Value<9e-08 & all$P.Value<9e-08) #n=1,076 epigenome-wide significant in all three studies
+sub<-all[index,]
+length(which(sub$EffectARE < 0 & sub$DMP_delta_Beta > 0 & sub$logFC >0 )) #n=970
+length(which(sub$EffectARE > 0 & sub$DMP_delta_Beta < 0 & sub$logFC <0 )) #n=106
+#1,076, so all, in same direction over all studies
+
+list1<-all$MarkerName[all$PvalueARE<9e-08] #n=4,319 epigenome-wide significant in our study
+list2<-all$MarkerName[all$DMP_P_Value<9e-08] #n=2,866 epigenome-wide significant in Inkster et al.
+list3<-all$MarkerName[all$P.Value<9e-08] #n=5,550 epigenome-wide significant in Andrews et al.
+
+venn.diagram(
+  x = list(list1, list2, list3),
+  category.names = c("Meta BET/ITU/PREDO" , "Inkster et al." , "Andrews et al."),
+  filename = 'venn_diagramm.png',
+  output=TRUE,
+  fill=c("green","red","blue"),
+  cat.cex=0.6
+)
+
+index<-which(all$PvalueARE< 9e-8) #n=4,319
+sub<-all[index,]
+length(which(sub$EffectARE < 0 & sub$DMP_delta_Beta > 0 & sub$logFC >0 )) #n=3,583
+length(which(sub$EffectARE > 0 & sub$DMP_delta_Beta < 0 & sub$logFC <0 )) #n=684
+#=> 4,267 out of 4,319= 98.8% are consistent
+
+length(which(sub$EffectARE < 0 & sub$DMP_delta_Beta < 0 & sub$logFC >0 )) #n=25
+length(which(sub$EffectARE < 0 & sub$DMP_delta_Beta > 0 & sub$logFC <0 )) #n=13
+length(which(sub$EffectARE > 0 & sub$DMP_delta_Beta < 0 & sub$logFC >0 )) #n=1
+length(which(sub$EffectARE > 0 & sub$DMP_delta_Beta > 0 & sub$logFC <0 )) #n=10
+#=> 4267+49=4316 consistent with at least one study => 99.9%
+
+#create table of overlapping CpGs, flip direction for Andrews and Inkster
+#note that Andrews is based on M-values!
+index<-which(all$PvalueARE< 9e-8 & all$DMP_P_Value < 9e-08 & all$P.Value<9e-08)
+top<-all[index,]
+top<-top[,c(1,24,25,12,14,23,21,26,29)]
+names(top)<-c("CpG","chr","pos_hg19","beta_BET/ITU/PREDO","p_BET/ITU/PREDO","beta_Inkster","p_Inkster","beta_Andrews","p_Andrews")
+top[,6]<- (-1)*top[,6]
+top[,8]<- (-1)*top[,8]
+length(which(sign(top$`beta_BET/ITU/PREDO`)==sign(top$beta_Inkster) & sign(top$`beta_BET/ITU/PREDO`)==sign(top$beta_Andrews))) #n=1,076, so all
+write.table(top,"1076_CpGs_all.txt",sep="\t",quote=F,row.names=F)
+
+
+
+
