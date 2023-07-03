@@ -1,0 +1,71 @@
+library(data.table)
+library(GWASTools)
+library(ggplot2)
+
+#read in results from meta-analysis
+meta<-fread("meta_BET_PREDO_ITU_random1.tbl",header=T,sep="\t")
+#ARE: additive random effects, this is based on the DerSimonian & Laird algorith
+
+length(which(meta$PvalueARE<9e-08)) #n=10,737 epigenome-wide hits
+
+#load annotation, this is the annotation of the EPIC array as provided by the minfi package
+load("annot_epic.Rdata")
+annot<-annot_epic[,c(4,2,1,22,24)] #subset to columns of interest
+res<-merge(meta,annot,by.x="MarkerName",by.y="Name")
+res<-res[,-c(2,3)]
+
+res$Chr<-substr(res$chr,start=4,stop=nchar(res$chr))
+res$Chr<-as.numeric(res$Chr)
+res<-res[order(res$Chr,res$pos),] #order by chromosome and position
+
+write.table(res,"meta_results.txt",sep="\t",quote=F,row.names=F)
+index<-which(res$PvalueARE<9e-08)
+write.table(res[index,],"epigenome_wide_significant_hits.txt",sep="\t",quote=F,row.names=F)
+
+#Manhattan plot
+manhattanPlot(p=res$PvalueARE,chr=res$Chr,signif=9e-08,ylim=c(0,100))
+dev.print("manhattan_meta.png",dev=png,width=800)
+
+#volcano plot
+res$expression = "stable" #stable: non-epigenome-wide significant
+res$expression[res$PvalueARE < 9e-08 & res$EffectARE >= 0]<-"up" #up-regulated in females
+res$expression[res$PvalueARE < 9e-08 & res$EffectARE <0]<-"down" #down-regulated in females
+
+p <- ggplot(data = as.data.frame(res), 
+            aes(x = EffectARE, 
+                y = -log10(res$PvalueARE), 
+                colour=expression)) +
+  geom_point(alpha=0.4, size=3.5) +
+  scale_color_manual(values=c("blue", "grey","red"))+
+  xlim(c(-0.4, 0.4)) +
+  labs(x="effect size",
+       y="-log10 (p-value)",
+       title="Differential DNA methylation")  +
+  theme_bw()+
+  theme(plot.title = element_text(hjust = 0.5), 
+        legend.position="right", 
+        legend.title = element_blank())
+dev.print("volcano_plac.png",dev=png,width=800)
+dev.print("volcano_plac.pdf",dev=pdf)
+
+#plot top hit
+#cg00739353, p_meta=1.5e-230
+load("BetaSet_BET_137.rda")
+beta_bet<-exprs(Beta_BET_137)
+pt_bet<-pData(Beta_BET_137)
+load("BetaSet_PREDO_139.rda")
+beta_predo<-exprs(Beta_PREDO_139)
+pt_predo<-pData(Beta_PREDO_139)
+load("BetaSet_ITU_470.rda")
+beta_itu<-exprs(Beta_ITU_470)
+pt_itu<-pData(Beta_ITU_470)
+
+par(mfrow=c(1,3))
+boxplot(beta_bet["cg00739353",]~pt_bet$sex, ylab="cg00739353",names=c("male","female"),col=c("blue","red"),xlab="",ylim=c(0.79,0.95),main="BET")
+stripchart(beta_bet["cg00739353",]~pt_bet$sex,vertical = TRUE, method = "jitter", add = TRUE, pch = 16, cex=0.5, col = 'grey')
+boxplot(beta_itu["cg00739353",]~pt_itu$sex,ylab="cg00739353",names=c("male","female"),col=c("blue","red"),xlab="",ylim=c(0.79,0.95),main="ITU")
+stripchart(beta_itu["cg00739353",]~pt_itu$sex,vertical = TRUE, method = "jitter", add = TRUE, pch = 16, cex=0.5, col = 'grey')
+boxplot(beta_predo["cg00739353",]~pt_predo$sex,ylab="cg00739353",names=c("male","female"),col=c("blue","red"),xlab="",ylim=c(0.79,0.95),main="PREDO")
+stripchart(beta_predo["cg00739353",]~pt_predo$sex,vertical = TRUE, method = "jitter", add = TRUE, pch = 16, cex=0.5, col = 'grey')
+dev.print("cg00739353_meta.pdf",dev=pdf)
+
