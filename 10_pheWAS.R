@@ -221,8 +221,6 @@ for (i in 1:4)
 {test<-c(test,rep(as.character(cat$cat[i]),cat$sum[i]))}
 test<-na.omit(test)
 
-#get colors from pheWAS_all_check.R in super directory
-#"#A6CEE3" "#1F78B4" "#B2DF8A" "#33A02C" "#FB9A99" "#E31A1C" "#FDBF6F" "#FF7F00" "#CAB2D6"
 pdf("39_traits_cat.pdf")
 PieChart(test, hole = 0, values = "%",
          col=c("#A6CEE3","#1F78B4","#B2DF8A","#FDBF6F"), fill = c("#A6CEE3","#1F78B4","#33A02C","#FDBF6F"), labels_cex = 0.6, main="", main_cex=0.6)
