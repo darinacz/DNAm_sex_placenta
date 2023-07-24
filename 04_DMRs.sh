@@ -11,10 +11,5 @@
 comb-p pipeline -c 4 --seed 0.05 --dist 200 -p dmr_seed_nominal meta_compb.bed
 
 #results in 66,581 regions, as shown in dmr_seed_nominal.regions-t.bed
-#of these 11,766 regions consist of at least 2 CpGs
-awk '{if ($5>=2) print $0}' dmr_seed_nominal.regions-t.bed | wc -l
-
-#of these 3,120 regions consist of at least 2 CpGs and have an epigenome-wide significant p-value
-awk '{if (($5>=2) && ($6<9e-08)) print $0}' dmr_seed_nominal.regions-t.bed | wc -l
 
 
