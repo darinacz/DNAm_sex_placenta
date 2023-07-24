@@ -1,9 +1,6 @@
 #DMRs were calculated using a bash script and comb-p
 
-module load anaconda
-conda activate comb-p
-
-#bed file nees chr in form of "chr" and needs to be sorted by chr and pos
+#bed file needs "chr" and needs to be sorted by chr and pos
 #header of bed file: #chrom start end P SNP
 #-c 4: p-values are in 4th column
 #--seed 1e-08 require a p-value of 1e-8 to start a region
