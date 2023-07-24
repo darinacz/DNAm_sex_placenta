@@ -154,47 +154,27 @@ go_mf<-sets[sets$Category=="GO_mf",]
 go_bp$GeneSet<- factor(go_bp$GeneSet, levels = go_bp$GeneSet[order(-log10(go_bp$p))])
 go_bp<-go_bp[order(go_bp$p),]
 go_bp$ratio<-go_bp$N_overlap/go_bp$N_genes
-#429 at FRD 0.05, plot top25
-pdf("GO_enrichment_bp.pdf")
-ggplot(go_bp[1:25,], 
-       aes(x = -log10(p),y=GeneSet, fill=ratio)) + 
-  geom_bar(stat="identity") +
-  theme_bw(base_size = 8) +
-  ylab(NULL) +
-  ggtitle("Top 25 enriched GO biological processes") 
-dev.off()
+#429 at FRD 0.05
 
 go_cc$GeneSet<- factor(go_cc$GeneSet, levels = go_cc$GeneSet[order(-log10(go_cc$p))])
 go_cc<-go_cc[order(go_cc$p),]
 go_cc$ratio<-go_cc$N_overlap/go_cc$N_genes
-#59 at FRD 0.05, plot top25
-pdf("GO_enrichment_cc.pdf")
-ggplot(go_cc[1:25,], 
-       aes(x = -log10(p),y=GeneSet, fill=ratio)) + 
-  geom_bar(stat="identity") +
-  theme_bw(base_size = 8) +
-  ylab(NULL) +
-  ggtitle("Top 25 enriched GO cellular components") 
-dev.off()
+#59 at FRD 0.05
 
 pdf("GO_enrichment_mf.pdf")
 go_mf$GeneSet<- factor(go_mf$GeneSet, levels = go_mf$GeneSet[order(-log10(go_mf$p))])
 go_mf<-go_mf[order(go_mf$p),]
 go_mf$ratio<-go_mf$N_overlap/go_mf$N_genes
-#63 at FRD 0.05, plot top25
-ggplot(go_mf[1:25,], 
-       aes(x = -log10(p),y=GeneSet, fill=ratio)) + 
-  geom_bar(stat="identity") +
-  theme_bw(base_size = 8) +
-  ylab(NULL) +
-  ggtitle("Top 25 enriched GO molecular function") 
-dev.off()
-
+#63 at FRD 0.05
 #####enrichment for GTEx tissues and TF were also performed using FUMA#####
 
 ####tissue enrichment#####
+gs<-GeneSet(geneIds=sig,organism='Homo Sapiens',
+            geneIdType=SymbolIdentifier())
+background<-GeneSet(geneIds=genes,organism='Homo Sapiens',
+                    geneIdType=SymbolIdentifier())
+output<-teEnrichment(gs,rnaSeqDataset = 1, backgroundGenes=background) #rnaSeqDataset=1 is human protein atlas
 
-#from Vignette, default: tissueSpecificGeneType = 1, all genes
 seEnrichmentOutput<-output[[1]]
 enrichmentOutput<-setNames(data.frame(assay(seEnrichmentOutput),
                                       row.names = rowData(seEnrichmentOutput)[,1]),
