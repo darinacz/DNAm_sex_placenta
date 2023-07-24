@@ -1,4 +1,4 @@
-#matrix eQTL was run for each cohort separately (BET, ITU, PREDO) in females and males as well as in males and females only. 
+#matrix eQTL was run for each cohort separately (BET, ITU, PREDO) in females and males together as well as in males and females only. 
 #Afterwards, we meta-analysed the results (all, females, males) using METAL in the same set-up like is given in 02_meta-analysis.sh
 #as example, we provide here the code for matrixeQTL in females in ITU, all other matrixEQTL analyses were set up accordingly
 
