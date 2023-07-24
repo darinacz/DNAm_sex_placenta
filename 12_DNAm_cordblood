@@ -167,15 +167,6 @@ names(cb)<-c("CpG","beta_cb","se_cb","p_cb")
 
 all<-merge(cvs,plac,by=1)
 all<-merge(all,cb,by=1)
-which(is.na(all$p_cvs)) #none
-which(all$p_cvs==0) #none
-which(is.na(all$p_plac)) #none
-which(all$plac==0) #none
-which(is.na(all$p_cb)) #none
-which(all$p_cb==0) #n=3
-index<-which(all$p_cb==0)
-min(all$p_cb[-index])#p=7.556974e-231
-all$p_cb[index]<-7.556974e-231
 write.table(all,"results_cvs_plac_cb_66_sex.txt",sep="\t",quote=F)
 
 library(corrplot)
