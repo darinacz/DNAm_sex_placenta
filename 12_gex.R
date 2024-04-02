@@ -21,6 +21,8 @@ index<-which(results_sex$padj<0.05) #n=50
 results_sex[index,]
 write.table(results_sex, "results_deseq2_sex_autosomes.txt",sep="\t",quote=F,row.names=F)
 
+
+#####Figure 4A#######
 ###volcano plot
 res<-results_sex
 
