@@ -10,6 +10,7 @@
 #CpG has to be at least nominally significant to start a region
 comb-p pipeline -c 4 --seed 0.05 --dist 200 -p dmr_seed_nominal meta_compb.bed
 
-#results in 66,581 regions, as shown in dmr_seed_nominal.regions-t.bed
+
+
 
 
