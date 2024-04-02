@@ -1,4 +1,6 @@
 library(Biobase)
+library(corrplot)
+library(ENmix)
 library(foreign)
 library(MASS)
 library(lmtest)
@@ -21,8 +23,8 @@ beta_cb<-exprs(Beta_ITU_426)
 pt_cb<-pData(Beta_ITU_426)
 
 #overlap
-length(which(rownames(pt_plac)%in% rownames(pt_cb) & rownames(pt_plac)%in% rownames(pt_cvs))) #n=66
-index<-which(rownames(pt_plac)%in% rownames(pt_cb) & rownames(pt_plac)%in% rownames(pt_cvs)) #n=66
+length(which(rownames(pt_plac)%in% rownames(pt_cb) & rownames(pt_plac)%in% rownames(pt_cvs))) #n=65
+index<-which(rownames(pt_plac)%in% rownames(pt_cb) & rownames(pt_plac)%in% rownames(pt_cvs)) #n=65
 
 #run analysis on overlaps
 #plac
@@ -31,17 +33,18 @@ pt_sub_plac<-pt_plac[index,]
 all.equal(rownames(pt_sub_plac),colnames(beta_sub_plac)) #TRUE
 #save final ESet
 phenoD=new("AnnotatedDataFrame", data= pt_sub_plac)
-Beta_ITU_66_plac = new("ExpressionSet", exprs= as.matrix(beta_sub_plac), phenoData=phenoD)
-save(Beta_ITU_66_plac,file="BetaSet_ITU_66_plac.rda")
+Beta_ITU_65_plac = new("ExpressionSet", exprs= as.matrix(beta_sub_plac), phenoData=phenoD)
+save(Beta_ITU_65_plac,file="BetaSet_ITU_65_plac.rda")
 beta<-beta_sub_plac
 pt<-pt_sub_plac
+mval<-B2M(beta)
 
 #run rlm using White's estimator
-results<-matrix(ncol=4,nrow=dim(beta)[1])
-for (i in 1: dim(beta)[1])
+results<-matrix(ncol=4,nrow=dim(mval)[1])
+for (i in 1: dim(mval)[1])
 {
-  results[i,1]<-rownames(beta)[i]
-  mod<-rlm(beta[i,]~pt$gestage_days+pt$smoking+pt$Trophoblasts+pt$Stromal+pt$Endothelial+
+  results[i,1]<-rownames(mval)[i]
+  mod<-rlm(mval[i,]~pt$gestage_days+pt$smoking+pt$Maternal_age+pt$Trophoblasts+pt$Stromal+pt$Endothelial+
              pt$nRBC+pt$Syncytiotrophoblast+pt$sex)
   cf = try(coeftest(mod, vcov=vcovHC(mod, type="HC0")))
   if (class(cf)=="try-error") {
@@ -50,9 +53,9 @@ for (i in 1: dim(beta)[1])
     results[i,4]<-"NA"
   }
   else{
-    results[i,2]<-cf[9,1]
-    results[i,3]<-cf[9,2]
-    results[i,4]<-cf[9,4]
+    results[i,2]<-cf[10,1]
+    results[i,3]<-cf[10,2]
+    results[i,4]<-cf[10,4]
   }
   print(i)
 }
@@ -63,27 +66,28 @@ for (i in 2:4)
 {results[,i]<-as.numeric(as.character(results[,i]))}
 
 results->results_ITU_sex
-save(results_ITU_sex,file="results_ITU_66_sex_plac.Rdata")
-write.table(results_ITU_sex,"results_ITU_66_sex_plac.txt",sep="\t",quote=F,row.names=F)
+save(results_ITU_sex,file="results_ITU_65_sex_plac.Rdata")
+write.table(results_ITU_sex,"results_ITU_65_sex_plac.txt",sep="\t",quote=F,row.names=F)
 
 #cvs
-index<-which(rownames(pt_cvs)%in% rownames(pt_cb) & rownames(pt_cvs)%in% rownames(pt_plac)) #n=66
+index<-which(rownames(pt_cvs)%in% rownames(pt_cb) & rownames(pt_cvs)%in% rownames(pt_plac)) #n=65
 beta_sub_cvs<-beta_cvs[,index]
 pt_sub_cvs<-pt_cvs[index,]
 all.equal(rownames(pt_sub_cvs),colnames(beta_sub_cvs)) #TRUE
 #save final ESet
 phenoD=new("AnnotatedDataFrame", data= pt_sub_cvs)
-Beta_ITU_66_cvs = new("ExpressionSet", exprs= as.matrix(beta_sub_cvs), phenoData=phenoD)
-save(Beta_ITU_66_cvs,file="BetaSet_ITU_66_cvs.rda")
+Beta_ITU_65_cvs = new("ExpressionSet", exprs= as.matrix(beta_sub_cvs), phenoData=phenoD)
+save(Beta_ITU_65_cvs,file="BetaSet_ITU_65_cvs.rda")
 beta<-beta_sub_cvs
 pt<-pt_sub_cvs
+mval<-B2M(beta)
 
 #run rlm using White's estimator
-results<-matrix(ncol=4,nrow=dim(beta)[1])
-for (i in 1: dim(beta)[1])
+results<-matrix(ncol=4,nrow=dim(mval)[1])
+for (i in 1: dim(mval)[1])
 {
-  results[i,1]<-rownames(beta)[i]
-  mod<-rlm(beta[i,]~pt$gestage_at_CVS_days+pt$smoking+pt$Trophoblasts+pt$Stromal+pt$Endothelial+
+  results[i,1]<-rownames(mval)[i]
+  mod<-rlm(mval[i,]~pt$gestage_at_CVS_days+pt$smoking+pt$Maternal_age+pt$Trophoblasts+pt$Stromal+pt$Endothelial+
              pt$nRBC+pt$Syncytiotrophoblast+pt$sex)
   cf = try(coeftest(mod, vcov=vcovHC(mod, type="HC0")))
   if (class(cf)=="try-error") {
@@ -92,9 +96,9 @@ for (i in 1: dim(beta)[1])
     results[i,4]<-"NA"
   }
   else{
-    results[i,2]<-cf[9,1]
-    results[i,3]<-cf[9,2]
-    results[i,4]<-cf[9,4]
+    results[i,2]<-cf[10,1]
+    results[i,3]<-cf[10,2]
+    results[i,4]<-cf[10,4]
   }
   print(i)
 }
@@ -105,28 +109,29 @@ for (i in 2:4)
 {results[,i]<-as.numeric(as.character(results[,i]))}
 
 results->results_ITU_sex_cvs
-save(results_ITU_sex_cvs,file="results_ITU_66_sex_cvs.Rdata")
-write.table(results_ITU_sex_cvs,"results_ITU_66_sex_cvs.txt",sep="\t",quote=F,row.names=F)
+save(results_ITU_sex_cvs,file="results_ITU_65_sex_cvs.Rdata")
+write.table(results_ITU_sex_cvs,"results_ITU_65_sex_cvs.txt",sep="\t",quote=F,row.names=F)
 
 
 #cordblood
-index<-which(rownames(pt_cb)%in% rownames(pt_cvs) & rownames(pt_cb)%in% rownames(pt_plac)) #n=66
+index<-which(rownames(pt_cb)%in% rownames(pt_cvs) & rownames(pt_cb)%in% rownames(pt_plac)) #n=65
 beta_sub_cb<-beta_cb[,index]
 pt_sub_cb<-pt_cb[index,]
 all.equal(rownames(pt_sub_cb),colnames(beta_sub_cb)) #TRUE
 #save final ESet
 phenoD=new("AnnotatedDataFrame", data= pt_sub_cb)
-Beta_ITU_66_cb = new("ExpressionSet", exprs= as.matrix(beta_sub_cb), phenoData=phenoD)
-save(Beta_ITU_66_cb,file="BetaSet_ITU_66_cb.rda")
+Beta_ITU_65_cb = new("ExpressionSet", exprs= as.matrix(beta_sub_cb), phenoData=phenoD)
+save(Beta_ITU_65_cb,file="BetaSet_ITU_65_cb.rda")
 beta<-beta_sub_cb
 pt<-pt_sub_cb
+mval<-B2M(beta)
 
 #run rlm using White's estimator
-results<-matrix(ncol=4,nrow=dim(beta)[1])
-for (i in 1: dim(beta)[1])
+results<-matrix(ncol=4,nrow=dim(mval)[1])
+for (i in 1: dim(mval)[1])
 {
-  results[i,1]<-rownames(beta)[i]
-  mod<-rlm(beta[i,]~pt$Gestational_Age_Days+pt$smoking+pt$CD8T+pt$CD4T+pt$NK+pt$Bcell+pt$Mono+pt$Gran+
+  results[i,1]<-rownames(mval)[i]
+  mod<-rlm(mval[i,]~pt$Gestational_Age_Days+pt$smoking+pt$Maternal_age+pt$CD8T+pt$CD4T+pt$NK+pt$Bcell+pt$Mono+pt$Gran+
              pt$nRBC+pt$sex)
   cf = try(coeftest(mod, vcov=vcovHC(mod, type="HC0")))
   if (class(cf)=="try-error") {
@@ -135,9 +140,9 @@ for (i in 1: dim(beta)[1])
     results[i,4]<-"NA"
   }
   else{
-    results[i,2]<-cf[11,1]
-    results[i,3]<-cf[11,2]
-    results[i,4]<-cf[11,4]
+    results[i,2]<-cf[12,1]
+    results[i,3]<-cf[12,2]
+    results[i,4]<-cf[12,4]
   }
   print(i)
 }
@@ -148,8 +153,8 @@ for (i in 2:4)
 {results[,i]<-as.numeric(as.character(results[,i]))}
 
 results->results_ITU_sex_cb
-save(results_ITU_sex_cb,file="results_ITU_66_sex_cb.Rdata")
-write.table(results_ITU_sex_cb,"results_ITU_66_sex_cb.txt",sep="\t",quote=F,row.names=F)
+save(results_ITU_sex_cb,file="results_ITU_65_sex_cb.Rdata")
+write.table(results_ITU_sex_cb,"results_ITU_65_sex_cb.txt",sep="\t",quote=F,row.names=F)
 
 #merge all three
 results_ITU_sex_cvs->cvs
@@ -167,13 +172,13 @@ names(cb)<-c("CpG","beta_cb","se_cb","p_cb")
 
 all<-merge(cvs,plac,by=1)
 all<-merge(all,cb,by=1)
-write.table(all,"results_cvs_plac_cb_66_sex.txt",sep="\t",quote=F)
+write.table(all,"results_cvs_plac_cb_65_sex.txt",sep="\t",quote=F)
 
-library(corrplot)
+#####Figure 3A and B######
 col <- colorRampPalette(c("#BB4444", "#EE9988", "#FFFFFF", "#77AADD", "#4477AA"))
 corrplot(cor(all[,c(2,6,10)],use="pairwise.complete.obs"),type="upper",addCoef.col = "black",col=col(200))
 dev.print("corr_cvs_plac_cordblood_allCpGs.pdf",dev=pdf)
-index<-which(all$FDR_plac<0.05)#n=8,215
+index<-which(all$FDR_plac<0.05)
 corrplot(cor(all[index,c(2,6,10)],use="pairwise.complete.obs"),type="upper",addCoef.col = "black",col=col(200))
 dev.print("corr_cvs_plac_cordblood_FDR0.05_CpGs.pdf",dev=pdf)
 
