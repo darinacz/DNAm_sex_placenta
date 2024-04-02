@@ -1,3 +1,4 @@
+library(UpSetR)
 library(VennDiagram)
 
 #association results from Andrews et al.
@@ -20,7 +21,7 @@ length(which(inkster$DMP_P_Value< 9e-08)) #n=3,156 epigenome-wide significant hi
 #read in meta-analysis results
 we<-read.table("meta_BET_PREDO_ITU_random1.tbl",sep="\t",header=T)
 we$FDR<-p.adjust(we$PvalueARE,method="BH")
-length(which(we$PvalueARE<9e-08)) #n=10,737 epigenome-wide significant hits
+length(which(we$PvalueARE<9e-08)) #n=10,320 epigenome-wide significant hits
 
 #450K and EPIC: overlap of 290,439 across all three studies
 index<-which((we$MarkerName %in% inkster$probeID) & (we$MarkerName %in% andrews$ID)) #n=290,439
@@ -33,51 +34,131 @@ all<-merge(we_sub,inkster_sub,by=1)
 all<-merge(all,andrews_sub,by=1)
 
 #CAUTION: our study is coded in a different direction!
-length(which(all$EffectARE <0 & all$DMP_delta_Beta > 0 & all$logFC >0 )) #n=74,270
-length(which(all$EffectARE >0 & all$DMP_delta_Beta < 0 & all$logFC <0 )) #n=64,234
-#138,504 in same direction over all studies, regardless of p-value
+length(which(all$EffectARE <0 & all$DMP_delta_Beta > 0 & all$logFC >0 )) #n=74,388
+length(which(all$EffectARE >0 & all$DMP_delta_Beta < 0 & all$logFC <0 )) #n=64,193
+#138,581 in same direction over all => 48%
 
-index<-which(all$PvalueARE< 9e-8 & all$DMP_P_Value<9e-08 & all$P.Value<9e-08) #n=1,076 epigenome-wide significant in all three studies
-sub<-all[index,]
-length(which(sub$EffectARE < 0 & sub$DMP_delta_Beta > 0 & sub$logFC >0 )) #n=970
-length(which(sub$EffectARE > 0 & sub$DMP_delta_Beta < 0 & sub$logFC <0 )) #n=106
-#1,076, so all, in same direction over all studies
 
-list1<-all$MarkerName[all$PvalueARE<9e-08] #n=4,319 epigenome-wide significant in our study
-list2<-all$MarkerName[all$DMP_P_Value<9e-08] #n=2,866 epigenome-wide significant in Inkster et al.
-list3<-all$MarkerName[all$P.Value<9e-08] #n=5,550 epigenome-wide significant in Andrews et al.
+list1<-all$MarkerName[all$PvalueARE<9e-08] #n=4,238
+list2<-all$MarkerName[all$DMP_P_Value<9e-08] #n=2,866
+list3<-all$MarkerName[all$P.Value<9e-08] #n=5,550
 
 venn.diagram(
   x = list(list1, list2, list3),
-  category.names = c("Meta BET/ITU/PREDO" , "Inkster et al." , "Andrews et al."),
+  category.names = c("BET/ITU/PREDO" , "Inkster et al." , "Andrews et al."),
   filename = 'venn_diagramm.png',
   output=TRUE,
   fill=c("green","red","blue"),
-  cat.cex=0.6
+  cex.cat=0.8, cex=2
 )
 
-index<-which(all$PvalueARE< 9e-8) #n=4,319
+index<-which(all$PvalueARE< 9e-8 & all$DMP_P_Value<9e-08 & all$P.Value<9e-08) #n=960
 sub<-all[index,]
-length(which(sub$EffectARE < 0 & sub$DMP_delta_Beta > 0 & sub$logFC >0 )) #n=3,583
-length(which(sub$EffectARE > 0 & sub$DMP_delta_Beta < 0 & sub$logFC <0 )) #n=684
-#=> 4,267 out of 4,319= 98.8% are consistent
+length(which(sub$EffectARE < 0 & sub$DMP_delta_Beta > 0 & sub$logFC >0 )) #n=845
+length(which(sub$EffectARE > 0 & sub$DMP_delta_Beta < 0 & sub$logFC <0 )) #n=115
+#=> all
 
-length(which(sub$EffectARE < 0 & sub$DMP_delta_Beta < 0 & sub$logFC >0 )) #n=25
-length(which(sub$EffectARE < 0 & sub$DMP_delta_Beta > 0 & sub$logFC <0 )) #n=13
+index<-which(all$PvalueARE< 9e-8) #n=4,238
+sub<-all[index,]
+length(which(sub$EffectARE < 0 & sub$DMP_delta_Beta > 0 & sub$logFC >0 )) #n=3,480
+length(which(sub$EffectARE > 0 & sub$DMP_delta_Beta < 0 & sub$logFC <0 )) #n=713
+#=> 4,193 out of 4,238= 98.9% are consistent
+
+length(which(sub$EffectARE < 0 & sub$DMP_delta_Beta < 0 & sub$logFC >0 )) #n=14
+length(which(sub$EffectARE < 0 & sub$DMP_delta_Beta > 0 & sub$logFC <0 )) #n=16
 length(which(sub$EffectARE > 0 & sub$DMP_delta_Beta < 0 & sub$logFC >0 )) #n=1
-length(which(sub$EffectARE > 0 & sub$DMP_delta_Beta > 0 & sub$logFC <0 )) #n=10
-#=> 4267+49=4316 consistent with at least one study => 99.9%
+length(which(sub$EffectARE > 0 & sub$DMP_delta_Beta > 0 & sub$logFC <0 )) #n=11
+#=> 4,193+42=4,235 consistent with at least one study => 99.9%
 
+#######Figure 1B#######
+#Upset plot, split by  hypo- and hypermethylation in females,epigenome-wide in at least one set
+index<-which(all$PvalueARE<9e-08 | all$DMP_P_Value<9e-08 | all$P.Value<9e-08) #n=8,523
+sub<-all[index,]
+summary(sub$PvalueARE)
+summary(sub$DMP_P_Value)
+summary(sub$P.Value)
+one_females_hypermethylated<-sub$MarkerName[sub$EffectARE > 0]
+one_females_hypomethylated<-sub$MarkerName[sub$EffectARE < 0]
+two_females_hypermethylated<-sub$MarkerName[sub$logFC < 0] #Andrews
+two_females_hypomethylated<-sub$MarkerName[sub$logFC > 0] #Andrews
+three_females_hypermethylated<-sub$MarkerName[sub$DMP_delta_Beta < 0] #Inkster
+three_females_hypomethylated<-sub$MarkerName[sub$DMP_delta_Beta> 0] #Inkster
+listInput <- list(one=one_females_hypomethylated, two=one_females_hypermethylated, three=two_females_hypomethylated,
+                  four=two_females_hypermethylated, five=three_females_hypomethylated, six=three_females_hypermethylated)
+names(listInput) = c("BET/ITU/PREDO_down", "BET/ITU/PREDO_up", "Andrews_down","Andrews_up",
+                     "Inkster_down","Inkster_up")
+
+pdf("upset_plot_overlap.pdf")
+upset(fromList(listInput),nsets=6, nintersects=NA, order.by="degree", sets.x.label="epigenome-wide CpGs \n in at least one cohort",
+      mainbar.y.label = "CpG Intersections", sets = c("Inkster_down","Andrews_down","BET/ITU/PREDO_down",
+                                                                                "Inkster_up","Andrews_up","BET/ITU/PREDO_up"), keep.order=T,
+      main.bar.col="darkgrey", sets.bar.col="darkgrey", matrix.color="darkgrey",
+#all three overlap
+queries = list(
+        list(
+          query = intersects,
+          params = list("Inkster_down","Andrews_down","BET/ITU/PREDO_down"), 
+          color = "darkgreen", 
+          active = T,
+          query.name = "all three down"),
+        list(
+          query = intersects,
+          params = list("Inkster_up","Andrews_up","BET/ITU/PREDO_up"), 
+          color = "darkgreen", 
+          active = T,
+          query.name = "all three up"),
+#BET/ITU/PREDO overlaps with one        
+        list(
+  query = intersects,
+  params = list("Andrews_up","Inkster_down","BET/ITU/PREDO_down"), 
+  color = "lightgreen", 
+  active = T,
+  query.name = "two down"),
+list(
+  query = intersects,
+  params = list("Andrews_down","Inkster_up","BET/ITU/PREDO_down"), 
+  color = "lightgreen", 
+  active = T,
+  query.name = "two down"),
+list(
+  query = intersects,
+  params = list("Andrews_up","Inkster_down","BET/ITU/PREDO_up"), 
+  color = "lightgreen", 
+  active = T,
+  query.name = "two up"),
+list(
+  query = elements,
+  params = list("Andrews_down","Inkster_up","BET/ITU/PREDO_up"), 
+  color = "lightgreen", 
+  active = T,
+  query.name = "two down"),
+#BET/ITU/PREDO overlaps with none        
+list(
+    query = elements,
+    params = list("Andrews_up","Inkster_up","BET/ITU/PREDO_down"), 
+    color = "darkred", 
+    active = T,
+    query.name = "only up"),
+list(
+  query = elements,
+  params = list("Andrews_down","Inkster_down","BET/ITU/PREDO_up"), 
+  color = "darkred", 
+  active = T,
+  query.name = "only down")))
+dev.off()          
+
+
+########Table S3##########
 #create table of overlapping CpGs, flip direction for Andrews and Inkster
-#note that Andrews is based on M-values!
+#note that Inkster is based on beta-values!
 index<-which(all$PvalueARE< 9e-8 & all$DMP_P_Value < 9e-08 & all$P.Value<9e-08)
 top<-all[index,]
 top<-top[,c(1,24,25,12,14,23,21,26,29)]
 names(top)<-c("CpG","chr","pos_hg19","beta_BET/ITU/PREDO","p_BET/ITU/PREDO","beta_Inkster","p_Inkster","beta_Andrews","p_Andrews")
 top[,6]<- (-1)*top[,6]
 top[,8]<- (-1)*top[,8]
-length(which(sign(top$`beta_BET/ITU/PREDO`)==sign(top$beta_Inkster) & sign(top$`beta_BET/ITU/PREDO`)==sign(top$beta_Andrews))) #n=1,076, so all
-write.table(top,"1076_CpGs_all.txt",sep="\t",quote=F,row.names=F)
+length(which(sign(top$`beta_BET/ITU/PREDO`)==sign(top$beta_Inkster) & sign(top$`beta_BET/ITU/PREDO`)==sign(top$beta_Andrews))) #n=960, so all
+write.table(top,"960_CpGs_all.txt",sep="\t",quote=F,row.names=F)
 
 
 
