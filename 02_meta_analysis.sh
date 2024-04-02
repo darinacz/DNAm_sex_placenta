@@ -9,10 +9,17 @@ MARKER   CpG
 EFFECT   beta_sex
 STDERR   se_sex
 PVAL     p_sex
+GENOMICCONTROL ON     
 
-PROCESS results_BET_sex.txt
-PROCESS results_PREDO_sex.txt
-PROCESS results_ITU_sex.txt
+GENOMICCONTROL 1.13
+PROCESS ../results_BET_sex.txt
+
+GENOMICCONTROL 1.37
+PROCESS ../results_ITU_sex.txt
+
+GENOMICCONTROL 1.17
+PROCESS ../results_PREDO_sex.txt
+
 
 #Execute random-effects meta-analysis 
 OUTFILE meta_BET_PREDO_ITU_random .tbl
