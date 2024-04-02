@@ -158,28 +158,127 @@ length(unique(inconsistent$SNP)) #n=169 SNPs
 
 ######check overlap with sex-differential DMPs####
 dmps<-read.table("meta_BET_PREDO_ITU_random1.tbl",sep="\t",header=T)
-index<-which(dmps$PvalueARE<9e-08) #n=10,737 DMPs
+index<-which(dmps$PvalueARE<9e-08) #n=10,320 DMPs
 top<-dmps[index,] #epigenome-wide significant DMPs
 other<-dmps[-index,] #non epigenome-wide significant CpGs
-length(which(top$MarkerName %in% unique(consistent$CpG))) #n=2,262
+length(which(top$MarkerName %in% unique(consistent$CpG))) #n=2,162
 
 #test for enrichment for CpGs involved in sex-consistent meQTLs: significant enrichment
-a=length(which(top$MarkerName %in% unique(consistent$CpG))) #2,262
-b=length(which(!(top$MarkerName %in% unique(consistent$CpG)))) #8,475
-c=length(which(other$MarkerName %in% unique(consistent$CpG)))#68,586
-d=length(which(!(other$MarkerName %in% unique(consistent$CpG))))#678,778
-fisher.test(matrix(c(a,b,c,d),byrow=T,ncol=2)) #p=8.384236e-297
+a=length(which(top$MarkerName %in% unique(consistent$CpG))) #2,162
+b=length(which(!(top$MarkerName %in% unique(consistent$CpG)))) #8,158
+c=length(which(other$MarkerName %in% unique(consistent$CpG)))#68,686
+d=length(which(!(other$MarkerName %in% unique(consistent$CpG))))#679,095
+fisher.test(matrix(c(a,b,c,d),byrow=T,ncol=2)) #p=5.149186e-280, OR=2.62
 
 #test for enrichment for CpGs involved in sex-inconsistent meQTLs: no significant enrichment
 a=length(which(top$MarkerName %in% unique(inconsistent$CpG))) #0
-b=length(which(!(top$MarkerName %in% unique(inconsistent$CpG)))) #10,737
+b=length(which(!(top$MarkerName %in% unique(inconsistent$CpG)))) #10,320
 c=length(which(other$MarkerName %in% unique(inconsistent$CpG)))#22
-d=length(which(!(other$MarkerName %in% unique(inconsistent$CpG))))#747,342
+d=length(which(!(other$MarkerName %in% unique(inconsistent$CpG))))#747,750
 fisher.test(matrix(c(a,b,c,d),byrow=T,ncol=2)) #p=1
 
 save(consistent,file="sex_consistent_meQTLs.Rdata")
 save(inconsistent,file="sex_specific_meQTLs.Rdata")
 
+
+####Table S9###
+#for each CpG, we take the SNP with the lowest p-value, then we need no clumping
+CpGs<-unique(exposure.data.unclumped$exposure) #n=2,162
+save(exposure.data.unclumped,file="meQTLs_unclumped.Rdata")
+
+exposure.data <- format_data(
+  test, type = "exposure",
+  snp_col = "SNP",
+  #pos_col = "position",
+  #chr_col = "chromosome",
+  phenotype_col = "CpG",
+  beta_col = "EffectARE",
+  se_col = "StdErrARE",
+  #eaf_col = "af",
+  #effect_allele_col = "allele.2",
+  #other_allele_col = "allele.1",
+  pval_col = "P_random_effects"
+)
+head(exposure.data)
+exposure.data.unclumped <- exposure.data
+
+
+data1<-exposure.data.unclumped[1,]
+for (i in 1:length(CpGs))
+{
+  index<-which(exposure.data.unclumped$exposure==CpGs[i])
+  test<-exposure.data.unclumped[index,]
+  index1<-which.min(test$pval.exposure)
+  data1<-rbind(data1,test[index1,])
+  print(i)}
+
+data1<-data1[-1,]
+final_consistent<-data1
+length(unique(final_consistent$SNP))#n=1,924 SNPs
+length(unique(final_consistent$exposure)) #n=2,162
+save(final_consistent,file="consistent_best_SNP_dmps.Rdata")
+
+#also save best SNP for all consistent CpGs
+CpGs<-unique(consistent$CpG) #n=70,848
+
+data1<-consistent[1,]
+for (i in 1:length(CpGs))
+{
+  index<-which(consistent$CpG==CpGs[i])
+  test<-consistent[index,]
+  index1<-which.min(test$P_random_effects)
+  data1<-rbind(data1,test[index1,])
+  print(i)}
+
+data1<-data1[-1,]
+final<-data1
+length(unique(final$SNP))#n=55,773 SNPs
+length(unique(final$CpG)) #n=70,848
+save(final,file="consistent_best_SNP.Rdata")
+write.table(final,"consistent_best_SNP.txt", sep="\t",quote=F,row.names=F) 
+
+
+#####Table S10#####
+#also save best SNP for all inconsistent CpGs
+inconsistent_male<-inconsistent_male_female[,c("CpG","SNP","EffectARE_males","StdErrARE_males","P_random_effects_males",
+                                               "EffectARE_females","StdErrARE_females","P_random_effects_females")]
+                                               
+CpGs<-unique(inconsistent_male$CpG) #n=108
+
+data1<-inconsistent_male[1,]
+for (i in 1:length(CpGs))
+{
+  index<-which(inconsistent_male$CpG==CpGs[i])
+  test<-inconsistent_male[index,]
+  index1<-which.min(test$P_random_effects_male)
+  data1<-rbind(data1,test[index1,])
+  print(i)}
+
+data1<-data1[-1,]
+data_males<-data1
+
+inconsistent_female<-inconsistent_female_male[,c("CpG","SNP","EffectARE_males","StdErrARE_males","P_random_effects_males",
+                                               "EffectARE_females","StdErrARE_females","P_random_effects_females")]
+
+CpGs<-unique(inconsistent_female$CpG) #n=74
+
+data1<-inconsistent_female[1,]
+for (i in 1:length(CpGs))
+{
+  index<-which(inconsistent_female$CpG==CpGs[i])
+  test<-inconsistent_female[index,]
+  index1<-which.min(test$P_random_effects_female)
+  data1<-rbind(data1,test[index1,])
+  print(i)}
+
+data1<-data1[-1,]
+data_females<-data1
+
+final<-rbind(data_males,data_females)
+length(unique(final$SNP))#n=169 SNPs
+length(unique(final$CpG))##n=182 CpGs
+save(final,file="inconsistent_best_SNP.Rdata")
+write.table(final,"inconsistent_best_SNP.txt", sep="\t",quote=F,row.names=F)   #Table S10                                            
 
 
 
